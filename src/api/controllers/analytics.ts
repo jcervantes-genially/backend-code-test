@@ -3,39 +3,49 @@ import { Int32 } from "bson";
 import { Response, Request } from "express";
 
 
-function updateAnalytics (typeIn: String) {
-  const Analytics = require('../models/analytics');
-  const Presentation = require('../models/presentation');
+    function updateAnalytics (typeIn: String) {
+        if( typeIn==="presentation"){
+            const Presentation = require('../models/presentation');
+            Presentation.count()
+            .then((result: any)=>{
+                if (result===0){
+                    createAnalytic(typeIn)
+                }
+                let total=result+1;
+                increaseAnalytic(typeIn,total);
+            });
+        }  
+    };
 
-    if( typeIn==="presentation"){
-        Presentation.count().then((result: any)=>{
-            if (result===0){
-                Analytics.create({
-                    type:typeIn,
-                    number:1,
-                    createdAt: new Date(),
-                    deleted: false
-                })
-            }
-            let total=result+1;
-            Analytics.findOne({type:typeIn})
-            .then((resultAnalytic: any)=>{
-                let idAnalytic=resultAnalytic._id;
-                Analytics.findByIdAndUpdate(
-                    idAnalytic,
-                    {number:total,modifiedAt:new Date()}
-                )
-                .catch(
-                    (err: any) => {console.log(err);}
-                );
-            })
-        }
-        );
+    function createAnalytic(typeIn: String){
+        const Analytics = require('../models/analytics');
+        Analytics.create({
+            type:typeIn,
+            number:1,
+            createdAt: new Date(),
+            deleted: false
+        });
     }
 
-  
-  
-};
+    function increaseAnalytic(typeIn:String,total:Number){
+        const Analytics = require('../models/analytics');
+        Analytics.findOne({type:typeIn})
+        .then((result: any)=>{
+            let idAnalytic=result._id;
+            Analytics.findByIdAndUpdate(
+                idAnalytic,
+                {number:total,modifiedAt:new Date()}
+            )
+            .catch(
+                (err: any) => {console.log(err);}
+            );
+            Analytics.findById(idAnalytic)
+            .then((resultAnalytic:any)=>{
+                console.log("número de presentaciones en la bbdd")
+                console.log(resultAnalytic.number)
+            })
+        });
+    }
 
 
 module.exports = {updateAnalytics}
